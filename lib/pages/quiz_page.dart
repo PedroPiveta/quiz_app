@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_flutter/components/question_box.dart';
 import 'package:quiz_flutter/helpers/database_helper.dart';
+import 'package:quiz_flutter/helpers/firebase_realtimedb_helper.dart';
 import 'package:quiz_flutter/models/question.dart';
+import 'package:quiz_flutter/pages/home_page.dart';
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -12,6 +14,8 @@ class QuizPage extends StatefulWidget {
 
 class _QuizPageState extends State<QuizPage> {
   final DatabaseHelper dbHelper = DatabaseHelper.instance;
+  final FirebaseRealtimedbHelper firebaseHelper = FirebaseRealtimedbHelper();
+  final TextEditingController nameController = TextEditingController();
   List<int> answers = [];
   List<Question> questions = [];
   List<int> correctAnswers = [];
@@ -43,11 +47,63 @@ class _QuizPageState extends State<QuizPage> {
     });
   }
 
+  Future<void> sendScore() async {
+    int score = 0;
+    for (var i = 0; i < questions.length; i++) {
+      if (answers[i] == correctAnswers[i]) {
+        score++;
+      }
+    }
+
+    await firebaseHelper.addScore(nameController.text, score);
+  }
+
+  void _showResultDialog(int score) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Resultado'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: 'Nome'),
+              ),
+              SizedBox(height: 16),
+              Text('Você acertou $score de ${questions.length} questões.'),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                await sendScore();
+                if (mounted) {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return const HomePage();
+                      },
+                    ),
+                  );
+                }
+              },
+              child: Text('OK', style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quiz App'),
+        title: const Text('Quiz'),
         centerTitle: true,
         backgroundColor: Colors.grey[50],
         surfaceTintColor: Colors.transparent,
@@ -120,30 +176,7 @@ class _QuizPageState extends State<QuizPage> {
                                 ElevatedButton(
                                   onPressed: () {
                                     Navigator.pop(context);
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text('Resultado'),
-                                          content: Text(
-                                            'Você acertou $score de ${questions.length} questões.',
-                                          ),
-                                          actions: [
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                'OK',
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
+                                    _showResultDialog(score);
                                   },
                                   child: Text(
                                     "OK",

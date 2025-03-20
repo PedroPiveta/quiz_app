@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:quiz_flutter/pages/home_page.dart';
 import 'package:quiz_flutter/pages/quiz_page.dart';
+import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
@@ -13,8 +19,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter quiz',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/quiz',
-      routes: {'/quiz': (context) => const QuizPage()},
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomePage(),
+        '/quiz': (context) => const QuizPage(),
+      },
     );
   }
 }
